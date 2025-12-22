@@ -387,18 +387,25 @@ def main():
     
     with sync_playwright() as p:
         # 启动浏览器（云端部署时使用 headless 模式）
-        browser = p.chromium.launch(
+        # 使用 Firefox 可以更好地绕过 Cloudflare 检测
+        browser = p.firefox.launch(
             headless=HEADLESS,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-            ]
+            args=[]
         )
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+            locale="en-US",
+            timezone_id="America/New_York"
         )
+        
+        # 添加初始化脚本来隐藏自动化特征
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+        
         page = context.new_page()
         
         try:
