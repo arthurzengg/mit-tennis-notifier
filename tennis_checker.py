@@ -67,19 +67,23 @@ def send_notification(title: str, message: str):
     """发送桌面通知 + 手机通知"""
     system = platform.system()
     
-    # 桌面通知
-    if system == "Darwin":  # macOS
-        script = f'display notification "{message}" with title "{title}" sound name "Glass"'
-        subprocess.run(["osascript", "-e", script])
-        subprocess.run(["say", f"Good news! Tennis court available on {CHECK_DATE}"])
-    elif system == "Linux":
-        subprocess.run(["notify-send", title, message])
-    elif system == "Windows":
+    # 桌面通知（仅在非 headless 模式下尝试）
+    if not HEADLESS:
         try:
-            from plyer import notification
-            notification.notify(title=title, message=message, timeout=10)
-        except ImportError:
-            pass
+            if system == "Darwin":  # macOS
+                script = f'display notification "{message}" with title "{title}" sound name "Glass"'
+                subprocess.run(["osascript", "-e", script])
+                subprocess.run(["say", f"Good news! Tennis court available on {CHECK_DATE}"])
+            elif system == "Linux":
+                subprocess.run(["notify-send", title, message], check=False)
+            elif system == "Windows":
+                try:
+                    from plyer import notification
+                    notification.notify(title=title, message=message, timeout=10)
+                except ImportError:
+                    pass
+        except Exception as e:
+            print(f"⚠️ 桌面通知失败（云端环境正常）: {e}")
     
     # Telegram 手机通知
     telegram_msg = f"🎾 <b>{title}</b>\n\n{message}\n\n🔗 <a href='{RESERVATION_URL}'>立即预订</a>"
