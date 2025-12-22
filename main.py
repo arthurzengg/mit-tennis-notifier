@@ -39,6 +39,8 @@ def run_checker():
         
         check_count = 0
         last_available_times = None
+        consecutive_errors = 0
+        max_consecutive_errors = 3
         
         # 主循环
         while True:
@@ -46,7 +48,35 @@ def run_checker():
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"\n[{current_time}] 第 {check_count} 次检查...")
             
+            # 检查浏览器是否还活着
+            if not browser.is_alive():
+                print("⚠️ 检测到浏览器已关闭，正在重启...")
+                if not browser.restart():
+                    print("❌ 重启浏览器失败，等待后重试...")
+                    time.sleep(30)
+                    continue
+                consecutive_errors = 0
+            
             available, current_times = browser.check_availability()
+            
+            # 检查是否有错误（空结果可能是正常的，也可能是错误）
+            # 这里通过连续错误计数来判断
+            if not available and not current_times:
+                # 可能是真的没有空位，也可能是出错了
+                # 通过检查浏览器状态来判断
+                if not browser.is_alive():
+                    consecutive_errors += 1
+                    print(f"⚠️ 检测到错误 ({consecutive_errors}/{max_consecutive_errors})")
+                    if consecutive_errors >= max_consecutive_errors:
+                        print("🔄 连续错误过多，重启浏览器...")
+                        if browser.restart():
+                            consecutive_errors = 0
+                        else:
+                            print("❌ 重启失败，等待后重试...")
+                            time.sleep(30)
+                    continue
+            else:
+                consecutive_errors = 0  # 重置错误计数
             
             if available:
                 times_str = ", ".join(current_times)

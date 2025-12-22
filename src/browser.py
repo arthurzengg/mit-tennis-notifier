@@ -59,9 +59,35 @@ class TennisBrowser:
                 self.browser.close()
             if self.playwright:
                 self.playwright.stop()
+            self.browser = None
+            self.context = None
+            self.page = None
+            self.playwright = None
             print("🔒 浏览器已关闭")
         except Exception as e:
             print(f"⚠️ 关闭浏览器时出错: {e}")
+    
+    def is_alive(self) -> bool:
+        """检查浏览器是否还在运行"""
+        try:
+            if not self.page or not self.browser:
+                return False
+            # 尝试获取页面标题来测试连接
+            self.page.title()
+            return True
+        except:
+            return False
+    
+    def restart(self) -> bool:
+        """重启浏览器并重新登录"""
+        print("🔄 正在重启浏览器...")
+        self.close()
+        time.sleep(2)
+        
+        if not self.start():
+            return False
+        
+        return self.login()
     
     def login(self) -> bool:
         """登录 MIT Recreation"""
