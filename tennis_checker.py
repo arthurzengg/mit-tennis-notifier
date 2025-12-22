@@ -21,7 +21,7 @@ load_dotenv()
 # 配置
 MIT_USERNAME = os.getenv("MIT_USERNAME")
 MIT_PASSWORD = os.getenv("MIT_PASSWORD")
-CHECK_DATE = os.getenv("CHECK_DATE", "12/22/2025")
+CHECK_DATE = os.getenv("CHECK_DATE", "12/27/2025")
 # 搜索间隔：2-4分钟随机
 CHECK_INTERVAL_MIN = 120  # 2分钟
 CHECK_INTERVAL_MAX = 240  # 4分钟
@@ -336,7 +336,7 @@ def main():
                     else:
                         print("😔 没有可用时间段")
                 
-                wait_time = 10
+                wait_time = random.randint(CHECK_INTERVAL_MIN, CHECK_INTERVAL_MAX)
                 print(f"⏳ {wait_time} 秒 ({wait_time//60}分{wait_time%60}秒) 后再次检查...")
                 time.sleep(wait_time)
                 
