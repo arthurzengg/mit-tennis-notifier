@@ -21,7 +21,7 @@ load_dotenv()
 # 配置
 MIT_USERNAME = os.getenv("MIT_USERNAME")
 MIT_PASSWORD = os.getenv("MIT_PASSWORD")
-CHECK_DATE = os.getenv("CHECK_DATE", "12/26/2025")
+CHECK_DATE = os.getenv("CHECK_DATE", "12/22/2025")
 # 搜索间隔：2-4分钟随机
 CHECK_INTERVAL_MIN = 120  # 2分钟
 CHECK_INTERVAL_MAX = 240  # 4分钟
@@ -29,6 +29,9 @@ CHECK_INTERVAL_MAX = 240  # 4分钟
 # Telegram 配置 (可选)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# 云端部署配置
+HEADLESS = os.getenv("HEADLESS", "false").lower() == "true"
 
 RESERVATION_URL = "https://mit.clubautomation.com/event/reserve-court-new"
 
@@ -238,18 +241,17 @@ def check_availability(page):
             except:
                 pass
         
-        # 去重
-        available_times = list(set(available_times))
+        # 去重并排序
+        available_times = sorted(set(available_times))
         
         if available_times:
-            times_str = ", ".join(available_times)
-            return True, f"可用时间: {times_str}"
+            return True, available_times
         
-        return False, "没有可用时间段"
+        return False, []
             
     except Exception as e:
         print(f"❌ 检查出错: {e}")
-        return False, f"检查出错: {e}"
+        return False, []
 
 
 def main():
@@ -266,8 +268,8 @@ def main():
         return
     
     with sync_playwright() as p:
-        # 启动浏览器（headless=False 可以看到操作过程）
-        browser = p.chromium.launch(headless=False)
+        # 启动浏览器（云端部署时使用 headless 模式）
+        browser = p.chromium.launch(headless=HEADLESS)
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080}
         )
@@ -280,23 +282,61 @@ def main():
                 return
             
             check_count = 0
+            last_available_times = None  # 记录上次检测到的可用时间
+            
             while True:
                 check_count += 1
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print(f"\n[{current_time}] 第 {check_count} 次检查...")
                 
-                available, message = check_availability(page)
+                available, current_times = check_availability(page)
                 
                 if available:
-                    send_notification(
-                        "🎾 MIT网球场有空位!",
-                        f"日期: {CHECK_DATE}\n{message}\n快去预订!"
-                    )
-                    print("\n🎉 检测到空位！程序将继续运行以持续监控...")
+                    times_str = ", ".join(current_times)
+                    
+                    # 检查是否有变化
+                    if last_available_times is None:
+                        # 首次检测到空位，发送通知
+                        send_notification(
+                            "🎾 MIT网球场有空位!",
+                            f"日期: {CHECK_DATE}\n可用时间: {times_str}\n快去预订!"
+                        )
+                        print("\n🎉 检测到空位！程序将继续运行以持续监控...")
+                    elif set(current_times) != set(last_available_times):
+                        # 可用时间有变化，发送更新通知
+                        # 计算新增和减少的时间
+                        new_times = set(current_times) - set(last_available_times)
+                        removed_times = set(last_available_times) - set(current_times)
+                        
+                        change_info = []
+                        if new_times:
+                            change_info.append(f"🆕 新增: {', '.join(sorted(new_times))}")
+                        if removed_times:
+                            change_info.append(f"❌ 已无: {', '.join(sorted(removed_times))}")
+                        
+                        send_notification(
+                            "🔄 MIT网球场时间更新!",
+                            f"日期: {CHECK_DATE}\n当前可用: {times_str}\n{chr(10).join(change_info)}"
+                        )
+                        print(f"\n🔄 时间有变化！当前可用: {times_str}")
+                    else:
+                        # 没有变化，不发送通知
+                        print(f"✅ 仍有空位 ({times_str})，时间无变化，不重复通知")
+                    
+                    last_available_times = current_times
                 else:
-                    print(f"😔 {message}")
+                    if last_available_times is not None:
+                        # 之前有空位，现在没了，发送通知
+                        send_notification(
+                            "😢 MIT网球场空位已满",
+                            f"日期: {CHECK_DATE}\n之前的可用时间已被预订，继续监控中..."
+                        )
+                        print("😢 空位已被抢走...")
+                        last_available_times = None
+                    else:
+                        print("😔 没有可用时间段")
                 
-                wait_time = random.randint(CHECK_INTERVAL_MIN, CHECK_INTERVAL_MAX)
+                wait_time = 10
                 print(f"⏳ {wait_time} 秒 ({wait_time//60}分{wait_time%60}秒) 后再次检查...")
                 time.sleep(wait_time)
                 

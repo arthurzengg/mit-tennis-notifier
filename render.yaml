@@ -1,0 +1,31 @@
+# Render Blueprint 配置文件
+# 文档: https://render.com/docs/blueprint-spec
+
+services:
+  # 使用 Background Worker（后台任务，持续运行）
+  - type: worker
+    name: mit-tennis-notifier
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    
+    # 环境变量（敏感信息在 Render Dashboard 中设置）
+    envVars:
+      - key: HEADLESS
+        value: "true"
+      - key: MIT_USERNAME
+        sync: false  # 需要在 Dashboard 手动设置
+      - key: MIT_PASSWORD
+        sync: false  # 需要在 Dashboard 手动设置
+      - key: CHECK_DATE
+        sync: false  # 需要在 Dashboard 手动设置
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false  # 可选
+      - key: TELEGRAM_CHAT_ID
+        sync: false  # 可选
+    
+    # 自动部署
+    autoDeploy: true
+    
+    # 区域（可选）
+    # region: oregon
+
