@@ -215,16 +215,35 @@ def check_availability(page):
         # 导航到预订页面
         page.goto(RESERVATION_URL, timeout=60000)
         page.wait_for_load_state("networkidle", timeout=30000)
-        time.sleep(3)  # 云端需要更多时间
+        time.sleep(5)  # 云端需要更多时间
         
         print(f"📍 预订页面URL: {page.url}")
+        print(f"📄 页面标题: {page.title()}")
+        
+        # 调试：打印页面部分内容
+        try:
+            body_text = page.locator("body").inner_text()[:500]
+            print(f"📝 页面内容预览: {body_text[:200]}...")
+        except Exception as e:
+            print(f"⚠️ 无法获取页面内容: {e}")
+        
+        # 检查是否有错误或需要重新登录
+        content = page.content()
+        if "login" in content.lower() and "password" in content.lower():
+            print("⚠️ 检测到登录页面，可能需要重新登录")
+            return False, []
         
         # 等待页面核心元素加载
         try:
-            page.wait_for_selector("#component_chosen, #component, select", timeout=15000)
+            page.wait_for_selector("#component_chosen, #component, select, form", timeout=20000)
             print("✅ 页面元素已加载")
         except:
             print("⚠️ 页面元素加载超时，继续尝试...")
+            # 打印所有表单元素帮助调试
+            forms = page.locator("form").count()
+            inputs = page.locator("input").count()
+            selects = page.locator("select").count()
+            print(f"📊 页面元素: {forms} 个表单, {inputs} 个输入框, {selects} 个下拉框")
         
         # 选择 Tennis (Chosen 自定义下拉框)
         # 先点击展开下拉框
