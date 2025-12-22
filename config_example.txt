@@ -1,0 +1,14 @@
+# 复制此文件为 .env，然后填写你的信息
+# cp config_example.txt .env
+
+# MIT Recreation 登录凭证
+MIT_USERNAME=arthurzeng
+MIT_PASSWORD=Abcdefg4567
+
+# 检测配置
+CHECK_DATE=12/27/2025
+
+# Telegram 手机通知 (可选)
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+

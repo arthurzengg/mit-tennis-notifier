@@ -1,0 +1,13 @@
+[project]
+name = "mit-tennis-checker"
+version = "0.1.0"
+description = "自动检测 MIT Recreation 网球场空位"
+requires-python = ">=3.10"
+dependencies = [
+    "playwright>=1.40.0",
+    "python-dotenv>=1.0.0",
+    "plyer>=2.1.0",
+]
+
+[tool.uv]
+dev-dependencies = []
