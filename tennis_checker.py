@@ -89,63 +89,113 @@ def send_notification(title: str, message: str):
 def login(page):
     """登录MIT Recreation"""
     print(f"🔐 正在登录 MIT Recreation...")
-    page.goto(RESERVATION_URL)
-    
-    # 等待页面加载
-    page.wait_for_load_state("networkidle")
-    
-    # 检查是否已经登录
-    if "Welcome," in page.content() and "Logout" in page.content():
-        print("✅ 已经登录!")
-        return True
-    
-    print(f"📍 当前URL: {page.url}")
     
     try:
-        # 等待登录表单出现
-        page.wait_for_selector("input", timeout=10000)
+        page.goto(RESERVATION_URL, timeout=60000)
         
-        # 查找并填写用户名
-        username_input = page.locator("input").first
-        if username_input:
-            print("✅ 找到用户名输入框")
-            username_input.fill(MIT_USERNAME)
+        # 等待页面加载
+        page.wait_for_load_state("domcontentloaded", timeout=30000)
+        time.sleep(3)  # 额外等待 JS 加载
+        
+        print(f"📍 当前URL: {page.url}")
+        
+        # 检查是否已经登录
+        if "Welcome," in page.content() and "Logout" in page.content():
+            print("✅ 已经登录!")
+            return True
+        
+        # 尝试多种选择器找到登录表单
+        selectors_to_try = [
+            "input[type='text']",
+            "input[type='email']",
+            "input[name='username']",
+            "input[name='email']",
+            "#username",
+            "#email",
+            "input:not([type='hidden']):not([type='password'])"
+        ]
+        
+        username_input = None
+        for selector in selectors_to_try:
+            try:
+                element = page.locator(selector).first
+                if element.count() > 0 and element.is_visible(timeout=2000):
+                    username_input = element
+                    print(f"✅ 找到用户名输入框: {selector}")
+                    break
+            except:
+                continue
+        
+        if not username_input:
+            print("⚠️ 找不到用户名输入框，尝试通用 input...")
+            page.wait_for_selector("input", timeout=30000)
+            username_input = page.locator("input").first
+        
+        # 填写用户名
+        username_input.fill(MIT_USERNAME)
+        print("✅ 已填写用户名")
         
         # 查找并填写密码
         password_input = page.locator("input[type='password']")
         if password_input.count() > 0:
-            print("✅ 找到密码输入框")
             password_input.fill(MIT_PASSWORD)
+            print("✅ 已填写密码")
+        else:
+            print("❌ 找不到密码输入框")
+            return False
         
         # 查找并点击登录按钮
-        login_button = page.locator("button:has-text('Login')")
-        if login_button.count() == 0:
-            login_button = page.locator("button[type='submit']")
-        if login_button.count() == 0:
-            login_button = page.locator("button").first
+        button_selectors = [
+            "button:has-text('Login')",
+            "button:has-text('Sign In')",
+            "input[type='submit']",
+            "button[type='submit']",
+            ".login-button",
+            "#login-button"
+        ]
         
-        if login_button.count() > 0:
-            print("✅ 找到登录按钮，点击中...")
+        login_button = None
+        for selector in button_selectors:
+            try:
+                element = page.locator(selector)
+                if element.count() > 0:
+                    login_button = element.first
+                    print(f"✅ 找到登录按钮: {selector}")
+                    break
+            except:
+                continue
+        
+        if login_button:
             login_button.click()
         else:
-            # 按回车提交
             print("⚠️ 找不到登录按钮，尝试按回车...")
             password_input.press("Enter")
         
         # 等待登录完成
-        page.wait_for_load_state("networkidle")
-        time.sleep(2)
+        page.wait_for_load_state("networkidle", timeout=30000)
+        time.sleep(3)
+        
+        print(f"📍 登录后URL: {page.url}")
         
         # 验证登录状态
-        if "Welcome" in page.content() or "Logout" in page.content():
+        content = page.content()
+        if "Welcome" in content or "Logout" in content or "logout" in content.lower():
             print("✅ 登录成功!")
             return True
+        elif "invalid" in content.lower() or "incorrect" in content.lower():
+            print("❌ 用户名或密码错误")
+            return False
         else:
             print("⚠️ 登录状态不确定，继续尝试...")
             return True
             
     except PlaywrightTimeout as e:
         print(f"❌ 超时: {e}")
+        # 打印页面标题帮助调试
+        try:
+            print(f"📄 页面标题: {page.title()}")
+        except:
+            pass
         return False
     except Exception as e:
         print(f"❌ 登录失败: {e}")
@@ -269,9 +319,17 @@ def main():
     
     with sync_playwright() as p:
         # 启动浏览器（云端部署时使用 headless 模式）
-        browser = p.chromium.launch(headless=HEADLESS)
+        browser = p.chromium.launch(
+            headless=HEADLESS,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+            ]
+        )
         context = browser.new_context(
-            viewport={"width": 1920, "height": 1080}
+            viewport={"width": 1920, "height": 1080},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
         page = context.new_page()
         
