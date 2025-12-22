@@ -1,0 +1,15 @@
+# Railway 配置文件
+# 文档: https://docs.railway.app/reference/config-as-code
+
+[build]
+# 使用 Dockerfile 构建
+builder = "DOCKERFILE"
+dockerfilePath = "./Dockerfile"
+
+[deploy]
+# 不需要健康检查（这是后台任务，不是 web 服务）
+healthcheckPath = ""
+# 重启策略
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
