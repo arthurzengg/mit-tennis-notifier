@@ -10,11 +10,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制项目代码
-COPY . .
+COPY src/ ./src/
+COPY main.py .
 
 # 设置环境变量
 ENV HEADLESS=true
+ENV PYTHONUNBUFFERED=1
 
 # 运行脚本
-CMD ["python", "tennis_checker.py"]
+CMD ["python", "main.py"]
 

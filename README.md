@@ -1,49 +1,64 @@
 # 🎾 MIT Tennis Court Availability Checker
 
-自动检测 MIT Recreation 网球场空位并发送桌面通知。
+自动检测 MIT Recreation 网球场空位并发送通知（支持 Telegram 推送）。
+
+## 📁 项目结构
+
+```
+mit-tennis-notifier/
+├── src/
+│   ├── __init__.py      # 包初始化
+│   ├── config.py        # 配置管理
+│   ├── notifications.py # 通知（Telegram/桌面）
+│   └── browser.py       # 浏览器操作
+├── main.py              # 程序入口
+├── Dockerfile           # Docker 配置
+├── railway.toml         # Railway 部署配置
+└── requirements.txt     # Python 依赖
+```
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
+### 本地运行
 
-```bash
-uv sync
-uv run playwright install chromium
-```
+1. **安装依赖**
 
-或者使用 pip：
 ```bash
 pip install -r requirements.txt
-playwright install chromium
+playwright install firefox
 ```
 
-### 2. 配置账号
+2. **配置环境变量**
 
-复制 `.env.example` 为 `.env` 并填写你的 MIT Recreation 账号信息：
+创建 `.env` 文件：
 
 ```bash
-cp .env.example .env
-```
-
-编辑 `.env` 文件：
-
-```
 MIT_USERNAME=你的用户名
 MIT_PASSWORD=你的密码
-CHECK_DATE=12/27/2025
-CHECK_INTERVAL_SECONDS=300
+CHECK_DATE=12/22/2025
+
+# 可选：Telegram 通知
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
 ```
 
-### 3. 运行
+3. **运行**
 
 ```bash
-uv run python tennis_checker.py
+python main.py
 ```
 
-或者直接：
-```bash
-python tennis_checker.py
-```
+### 云端部署 (Railway)
+
+1. Fork 或 Push 到 GitHub
+2. 在 [Railway](https://railway.app) 创建项目，连接仓库
+3. 添加环境变量：
+   - `MIT_USERNAME`
+   - `MIT_PASSWORD`
+   - `CHECK_DATE`
+   - `HEADLESS=true`
+   - `TELEGRAM_BOT_TOKEN` (推荐)
+   - `TELEGRAM_CHAT_ID` (推荐)
 
 ## ⚙️ 配置说明
 
@@ -51,30 +66,48 @@ python tennis_checker.py
 |------|------|--------|
 | `MIT_USERNAME` | MIT Recreation 用户名 | 必填 |
 | `MIT_PASSWORD` | MIT Recreation 密码 | 必填 |
-| `CHECK_DATE` | 要检测的日期 | `12/27/2025` |
-| `CHECK_INTERVAL_SECONDS` | 检查间隔（秒） | `300` (5分钟) |
+| `CHECK_DATE` | 要检测的日期 (MM/DD/YYYY) | `12/22/2025` |
+| `CHECK_INTERVAL_MIN` | 最小检查间隔（秒） | `120` |
+| `CHECK_INTERVAL_MAX` | 最大检查间隔（秒） | `240` |
+| `HEADLESS` | 无头模式（云端必须为 true） | `false` |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 可选 |
+| `TELEGRAM_CHAT_ID` | Telegram Chat ID | 可选 |
 
 ## 🔔 通知方式
 
-- **macOS**: 桌面通知 + 语音提醒
-- **Linux**: 桌面通知 (notify-send)
-- **Windows**: 桌面通知 (plyer)
+### Telegram（推荐，云端必备）
 
-## 📝 注意事项
+1. 在 Telegram 找 [@BotFather](https://t.me/BotFather) 创建 Bot
+2. 获取 Bot Token
+3. 找 [@userinfobot](https://t.me/userinfobot) 获取你的 Chat ID
+4. 设置环境变量
 
-1. 首次运行会自动下载 Chrome 驱动
-2. 默认会打开浏览器窗口，如果想后台运行，可以在代码中取消 `--headless` 注释
-3. 按 `Ctrl+C` 可以停止程序
-4. 建议将检查间隔设置为 5 分钟以上，避免对服务器造成压力
+### 桌面通知（仅本地）
+
+- **macOS**: 系统通知 + 语音提醒
+- **Linux**: notify-send
+- **Windows**: plyer
+
+## 📢 通知逻辑
+
+| 情况 | 行为 |
+|------|------|
+| 首次检测到空位 | ✅ 立即发送通知 |
+| 可用时间有变化 | 🔄 发送更新通知 |
+| 可用时间无变化 | 🔇 不重复通知 |
+| 空位被抢完 | 😢 发送提醒 |
 
 ## 🐛 常见问题
 
-**Q: 提示登录失败？**
-A: 检查用户名密码是否正确，也可能是网站更新了登录页面结构
+**Q: 被 Cloudflare 阻止？**
+A: 程序使用 Firefox 浏览器绕过检测，如果还是被阻止，建议本地运行。
 
-**Q: 检测不到空位？**
-A: 网站结构可能有变化，可以手动打开浏览器观察
+**Q: 登录失败？**
+A: 检查用户名密码是否正确，确保账号可以正常登录网站。
 
-**Q: Chrome 驱动下载失败？**
-A: 确保网络连接正常，或手动安装 ChromeDriver
+**Q: Railway 费用？**
+A: 有 $5/月免费额度，此程序约消耗 $3-5/月。
 
+## 📄 License
+
+MIT

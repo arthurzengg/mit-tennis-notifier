@@ -11,4 +11,7 @@ venv
 .vscode
 *.md
 uv.lock
+tennis_checker.py
+config_example.txt
+pyproject.toml
 
