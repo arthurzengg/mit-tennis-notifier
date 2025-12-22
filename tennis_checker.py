@@ -5,6 +5,7 @@ MIT Tennis Court Availability Checker
 """
 
 import os
+import sys
 import time
 import random
 import platform
@@ -14,6 +15,10 @@ import urllib.parse
 from datetime import datetime
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+
+# 确保输出不被缓冲（Docker 容器中重要）
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 # 加载环境变量
 load_dotenv()
@@ -306,15 +311,22 @@ def check_availability(page):
 
 def main():
     """主函数"""
-    print("="*60)
-    print("🎾 MIT Tennis Court Availability Checker")
-    print(f"📅 检测日期: {CHECK_DATE}")
-    print(f"⏱️  检测间隔: {CHECK_INTERVAL_MIN//60}-{CHECK_INTERVAL_MAX//60} 分钟随机")
-    print("="*60)
+    print("="*60, flush=True)
+    print("🎾 MIT Tennis Court Availability Checker", flush=True)
+    print(f"📅 检测日期: {CHECK_DATE}", flush=True)
+    print(f"⏱️  检测间隔: {CHECK_INTERVAL_MIN//60}-{CHECK_INTERVAL_MAX//60} 分钟随机", flush=True)
+    print(f"🖥️  Headless 模式: {HEADLESS}", flush=True)
+    print("="*60, flush=True)
+    
+    # 检查环境变量
+    print(f"🔍 MIT_USERNAME: {'已设置' if MIT_USERNAME else '❌ 未设置'}", flush=True)
+    print(f"🔍 MIT_PASSWORD: {'已设置' if MIT_PASSWORD else '❌ 未设置'}", flush=True)
     
     if not MIT_USERNAME or not MIT_PASSWORD:
-        print("❌ 错误: 请在 .env 文件中设置 MIT_USERNAME 和 MIT_PASSWORD")
-        print("   可以参考 config_example.txt 文件")
+        print("❌ 错误: 请在环境变量中设置 MIT_USERNAME 和 MIT_PASSWORD", flush=True)
+        print("   Railway: Settings -> Variables", flush=True)
+        # 等待一会再退出，确保日志被写入
+        time.sleep(5)
         return
     
     with sync_playwright() as p:
