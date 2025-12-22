@@ -26,7 +26,7 @@ load_dotenv()
 # 配置
 MIT_USERNAME = os.getenv("MIT_USERNAME")
 MIT_PASSWORD = os.getenv("MIT_PASSWORD")
-CHECK_DATE = os.getenv("CHECK_DATE", "12/27/2025")
+CHECK_DATE = os.getenv("CHECK_DATE", "12/22/2025")
 # 搜索间隔：2-4分钟随机
 CHECK_INTERVAL_MIN = 120  # 2分钟
 CHECK_INTERVAL_MAX = 240  # 4分钟
@@ -213,44 +213,81 @@ def check_availability(page):
     
     try:
         # 导航到预订页面
-        page.goto(RESERVATION_URL)
-        page.wait_for_load_state("networkidle")
-        time.sleep(2)
+        page.goto(RESERVATION_URL, timeout=60000)
+        page.wait_for_load_state("networkidle", timeout=30000)
+        time.sleep(3)  # 云端需要更多时间
+        
+        print(f"📍 预订页面URL: {page.url}")
+        
+        # 等待页面核心元素加载
+        try:
+            page.wait_for_selector("#component_chosen, #component, select", timeout=15000)
+            print("✅ 页面元素已加载")
+        except:
+            print("⚠️ 页面元素加载超时，继续尝试...")
         
         # 选择 Tennis (Chosen 自定义下拉框)
         # 先点击展开下拉框
         chosen_dropdown = page.locator("#component_chosen .chosen-single")
         if chosen_dropdown.count() > 0:
             chosen_dropdown.click()
-            time.sleep(0.5)
+            time.sleep(1)
             # 点击 Tennis 选项
             tennis_option = page.locator("#component_chosen .chosen-results li:has-text('Tennis')")
             if tennis_option.count() > 0:
                 tennis_option.click()
                 print("✅ 已选择 Tennis")
-                time.sleep(1)
+                time.sleep(2)
             else:
                 print("❌ 找不到 Tennis 选项")
         else:
             # 备用方案：直接操作隐藏的 select
-            page.evaluate("document.querySelector('#component').value = '2'")
-            page.evaluate("document.querySelector('#component').dispatchEvent(new Event('change'))")
-            print("✅ 已通过 JS 选择 Tennis")
-            time.sleep(1)
+            print("⚠️ 找不到 Chosen 下拉框，尝试直接设置...")
+            try:
+                page.evaluate("document.querySelector('#component').value = '2'")
+                page.evaluate("document.querySelector('#component').dispatchEvent(new Event('change'))")
+                print("✅ 已通过 JS 选择 Tennis")
+            except Exception as e:
+                print(f"⚠️ 设置 Tennis 失败: {e}")
+            time.sleep(2)
         
-        # 设置日期 (使用 JavaScript 直接设置，避免日历弹窗问题)
-        date_input = page.locator("#date, input[name='date']").first
-        if date_input.count() > 0:
-            # 使用 JavaScript 直接设置日期值，不触发日历
-            page.evaluate(f"""
-                var dateInput = document.querySelector('#date') || document.querySelector('input[name="date"]');
-                if (dateInput) {{
-                    dateInput.value = '{CHECK_DATE}';
-                    dateInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                }}
-            """)
-            print(f"✅ 设置日期为: {CHECK_DATE}")
-            time.sleep(0.5)
+        # 等待日期输入框出现
+        date_selectors = ["#date", "input[name='date']", "input.datepicker", "input[type='text'][placeholder*='date']"]
+        date_input = None
+        
+        for selector in date_selectors:
+            try:
+                element = page.locator(selector)
+                if element.count() > 0 and element.first.is_visible(timeout=3000):
+                    date_input = element.first
+                    print(f"✅ 找到日期输入框: {selector}")
+                    break
+            except:
+                continue
+        
+        if date_input:
+            # 使用 Playwright 原生方法设置日期（更可靠）
+            try:
+                date_input.click()
+                time.sleep(0.5)
+                date_input.fill("")  # 先清空
+                date_input.fill(CHECK_DATE)
+                date_input.press("Escape")  # 关闭可能的日历弹窗
+                print(f"✅ 设置日期为: {CHECK_DATE}")
+            except Exception as e:
+                print(f"⚠️ Playwright 设置日期失败，尝试 JS: {e}")
+                # 备用：JavaScript 方式
+                page.evaluate(f"""
+                    var inputs = document.querySelectorAll('input');
+                    for (var i = 0; i < inputs.length; i++) {{
+                        if (inputs[i].id === 'date' || inputs[i].name === 'date') {{
+                            inputs[i].value = '{CHECK_DATE}';
+                            inputs[i].dispatchEvent(new Event('change', {{ bubbles: true }}));
+                            break;
+                        }}
+                    }}
+                """)
+            time.sleep(1)
         else:
             print("❌ 找不到日期输入框")
         
