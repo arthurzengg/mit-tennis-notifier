@@ -66,12 +66,21 @@ python main.py
 |------|------|--------|
 | `MIT_USERNAME` | MIT Recreation 用户名 | 必填 |
 | `MIT_PASSWORD` | MIT Recreation 密码 | 必填 |
-| `CHECK_DATE` | 要检测的日期 (MM/DD/YYYY) | `12/22/2025` |
+| `CHECK_DATES` | 要检测的日期，**支持多个日期用逗号分隔** | `1/3/2026` |
 | `CHECK_INTERVAL_MIN` | 最小检查间隔（秒） | `120` |
 | `CHECK_INTERVAL_MAX` | 最大检查间隔（秒） | `240` |
 | `HEADLESS` | 无头模式（云端必须为 true） | `false` |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 可选 |
 | `TELEGRAM_CHAT_ID` | Telegram Chat ID | 可选 |
+
+### 多日期检测示例
+
+```bash
+# 同时监控 3 个日期
+CHECK_DATES=12/27/2025,12/28/2025,12/29/2025
+```
+
+程序会依次检查每个日期，并为每个日期**独立跟踪**可用时间变化。
 
 ## 🔔 通知方式
 

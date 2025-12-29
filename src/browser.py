@@ -170,14 +170,17 @@ class TennisBrowser:
             print(f"❌ 登录失败: {e}")
             return False
     
-    def check_availability(self) -> Tuple[bool, List[str]]:
+    def check_availability(self, check_date: str) -> Tuple[bool, List[str]]:
         """
-        检查网球场空位
+        检查指定日期的网球场空位
+        
+        Args:
+            check_date: 要检查的日期，格式 MM/DD/YYYY
         
         Returns:
             (是否有空位, 可用时间列表)
         """
-        print(f"\n🔍 正在检查 {config.CHECK_DATE} 的网球场空位...")
+        print(f"\n🔍 正在检查 {check_date} 的网球场空位...")
         
         try:
             self.page.goto(config.RESERVATION_URL, timeout=60000)
@@ -212,7 +215,7 @@ class TennisBrowser:
             self._select_tennis()
             
             # 设置日期
-            self._set_date()
+            self._set_date(check_date)
             
             # 点击搜索
             self._click_search()
@@ -260,7 +263,7 @@ class TennisBrowser:
                 print(f"⚠️ 设置 Tennis 失败: {e}")
             time.sleep(2)
     
-    def _set_date(self) -> None:
+    def _set_date(self, check_date: str) -> None:
         """设置检查日期"""
         date_input = self._find_element([
             "#date",
@@ -273,9 +276,9 @@ class TennisBrowser:
                 date_input.click()
                 time.sleep(0.5)
                 date_input.fill("")
-                date_input.fill(config.CHECK_DATE)
+                date_input.fill(check_date)
                 date_input.press("Escape")
-                print(f"✅ 设置日期为: {config.CHECK_DATE}")
+                print(f"✅ 设置日期为: {check_date}")
             except Exception as e:
                 print(f"⚠️ 设置日期失败: {e}")
             time.sleep(1)
