@@ -18,6 +18,7 @@ class TennisBrowser:
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
+        self.page_ready: bool = False  # 标记页面是否准备好
     
     def start(self) -> bool:
         """启动浏览器"""
@@ -177,6 +178,8 @@ class TennisBrowser:
         Returns:
             是否成功
         """
+        self.page_ready = False  # 重置状态
+        
         try:
             self.page.goto(config.RESERVATION_URL, timeout=60000)
             self.page.wait_for_load_state("networkidle", timeout=30000)
@@ -208,10 +211,13 @@ class TennisBrowser:
             
             # 选择 Tennis（只需要选择一次）
             self._select_tennis()
+            
+            self.page_ready = True  # 页面准备好了
             return True
             
         except Exception as e:
             print(f"❌ 准备页面出错: {e}")
+            self.page_ready = False
             return False
     
     def check_availability(self, check_date: str, first_date: bool = True) -> Tuple[bool, List[str]]:

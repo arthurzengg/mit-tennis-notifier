@@ -67,16 +67,27 @@ def run_checker():
             
             # 遍历每个日期进行检查
             has_error = False
+            
             for idx, check_date in enumerate(config.CHECK_DATES):
                 # 只有第一个日期需要重新加载页面，后续只需修改日期
                 first_date = (idx == 0)
+                
+                # 如果不是第一个日期，但页面还没准备好，跳过
+                if not first_date and not browser.page_ready:
+                    print(f"⏭️ [{check_date}] 跳过（页面未就绪）")
+                    continue
+                
                 available, current_times = browser.check_availability(check_date, first_date=first_date)
                 
-                # 检查是否有错误
-                if not available and not current_times:
-                    if not browser.is_alive():
-                        has_error = True
-                        break  # 浏览器崩溃，跳出循环
+                # 第一个日期加载失败，跳过后续
+                if first_date and not browser.page_ready:
+                    print("⚠️ 页面加载失败，跳过本轮后续日期")
+                    break
+                
+                # 检查浏览器是否崩溃
+                if not browser.is_alive():
+                    has_error = True
+                    break  # 浏览器崩溃，跳出循环
                 
                 # 获取该日期上次的可用时间
                 last_times = last_available_times.get(check_date)
