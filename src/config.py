@@ -32,8 +32,8 @@ class Config:
     _CHECK_DATES_RAW: str = os.getenv("CHECK_DATES", os.getenv("CHECK_DATE", "1/3/2026, 1/4/2026"))
     CHECK_DATES: List[str] = parse_dates(_CHECK_DATES_RAW)
     
-    CHECK_INTERVAL_MIN: int = int(os.getenv("CHECK_INTERVAL_MIN", "120"))  # 2分钟
-    CHECK_INTERVAL_MAX: int = int(os.getenv("CHECK_INTERVAL_MAX", "240"))  # 4分钟
+    CHECK_INTERVAL_MIN: int = int(os.getenv("CHECK_INTERVAL_MIN", "30"))  # 0.5分钟
+    CHECK_INTERVAL_MAX: int = int(os.getenv("CHECK_INTERVAL_MAX", "60"))  # 1分钟
     
     # Telegram 配置 (可选)
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
