@@ -67,8 +67,10 @@ def run_checker():
             
             # 遍历每个日期进行检查
             has_error = False
-            for check_date in config.CHECK_DATES:
-                available, current_times = browser.check_availability(check_date)
+            for idx, check_date in enumerate(config.CHECK_DATES):
+                # 只有第一个日期需要重新加载页面，后续只需修改日期
+                first_date = (idx == 0)
+                available, current_times = browser.check_availability(check_date, first_date=first_date)
                 
                 # 检查是否有错误
                 if not available and not current_times:

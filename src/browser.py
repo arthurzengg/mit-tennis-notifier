@@ -170,18 +170,13 @@ class TennisBrowser:
             print(f"❌ 登录失败: {e}")
             return False
     
-    def check_availability(self, check_date: str) -> Tuple[bool, List[str]]:
+    def prepare_search_page(self) -> bool:
         """
-        检查指定日期的网球场空位
-        
-        Args:
-            check_date: 要检查的日期，格式 MM/DD/YYYY
+        准备搜索页面（加载页面并选择 Tennis）
         
         Returns:
-            (是否有空位, 可用时间列表)
+            是否成功
         """
-        print(f"\n🔍 正在检查 {check_date} 的网球场空位...")
-        
         try:
             self.page.goto(config.RESERVATION_URL, timeout=60000)
             self.page.wait_for_load_state("networkidle", timeout=30000)
@@ -202,7 +197,7 @@ class TennisBrowser:
             content = self.page.content()
             if "login" in content.lower() and "password" in content.lower():
                 print("⚠️ 检测到登录页面，需要重新登录")
-                return False, []
+                return False
             
             # 等待页面元素加载
             try:
@@ -211,8 +206,32 @@ class TennisBrowser:
             except:
                 print("⚠️ 页面元素加载超时，继续尝试...")
             
-            # 选择 Tennis
+            # 选择 Tennis（只需要选择一次）
             self._select_tennis()
+            return True
+            
+        except Exception as e:
+            print(f"❌ 准备页面出错: {e}")
+            return False
+    
+    def check_availability(self, check_date: str, first_date: bool = True) -> Tuple[bool, List[str]]:
+        """
+        检查指定日期的网球场空位
+        
+        Args:
+            check_date: 要检查的日期，格式 MM/DD/YYYY
+            first_date: 是否是本轮检查的第一个日期（需要重新加载页面）
+        
+        Returns:
+            (是否有空位, 可用时间列表)
+        """
+        print(f"\n🔍 正在检查 {check_date} 的网球场空位...")
+        
+        try:
+            # 只有第一个日期需要重新加载页面
+            if first_date:
+                if not self.prepare_search_page():
+                    return False, []
             
             # 设置日期
             self._set_date(check_date)
