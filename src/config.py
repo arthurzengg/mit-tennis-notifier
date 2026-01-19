@@ -29,7 +29,7 @@ class Config:
     
     # 检测配置 - 支持多个日期，逗号分隔
     # 例如: "12/27/2025,12/28/2025,12/29/2025"
-    _CHECK_DATES_RAW: str = os.getenv("CHECK_DATES", os.getenv("CHECK_DATE", "1/3/2026, 1/4/2026"))
+    _CHECK_DATES_RAW: str = os.getenv("CHECK_DATES", os.getenv("CHECK_DATE", "1/25/2026"))
     CHECK_DATES: List[str] = parse_dates(_CHECK_DATES_RAW)
     
     CHECK_INTERVAL_MIN: int = int(os.getenv("CHECK_INTERVAL_MIN", "30"))  # 0.5分钟
