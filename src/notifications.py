@@ -61,7 +61,7 @@ def send_desktop_notification(title: str, message: str) -> bool:
         if system == "Darwin":  # macOS
             script = f'display notification "{message}" with title "{title}" sound name "Glass"'
             subprocess.run(["osascript", "-e", script])
-            subprocess.run(["say", f"Good news! Tennis court available on {config.CHECK_DATE}"])
+            subprocess.run(["say", f"Good news! Tennis court available on {', '.join(config.CHECK_DATES)}"])
             return True
         elif system == "Linux":
             result = subprocess.run(["notify-send", title, message], check=False)
