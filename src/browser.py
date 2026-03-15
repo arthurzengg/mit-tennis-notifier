@@ -46,6 +46,19 @@ class TennisBrowser:
             """)
             
             self.page = self.context.new_page()
+
+            # 拦截非必要资源，减少内存占用
+            blocked_extensions = re.compile(
+                r"\.(png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|mp4|mp3|webm|avi)(\?.*)?$",
+                re.IGNORECASE
+            )
+            def _abort_if_media(route):
+                if blocked_extensions.search(route.request.url):
+                    route.abort()
+                else:
+                    route.continue_()
+            self.page.route("**/*", _abort_if_media)
+
             print("✅ 浏览器已启动")
             return True
             
